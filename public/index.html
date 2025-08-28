@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>애니어그램 테스트 챗봇</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #FAF3E0; margin: 0; display: flex; flex-direction: column; height: 100vh; position: relative; overflow: hidden; }
+    body::before { content: ""; position: absolute; inset: 0; background: url("enneagram-bg.png") center/40% no-repeat; opacity: 0.08; pointer-events: none; z-index: 0; }
+    header, #chat, #inputBox { position: relative; z-index: 1; }
+    header { background-color: #D4A373; padding: 1rem; text-align: center; font-size: 1.5rem; font-weight: bold; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #chat { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+    .bot { align-self: flex-start; background-color: #F6E6CB; padding: 0.8rem 1rem; border-radius: 1rem; max-width: 70%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: pre-line; }
+    .user { align-self: flex-end; background-color: #CDE0C9; padding: 0.8rem 1rem; border-radius: 1rem; max-width: 70%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: pre-line; }
+    #inputBox { display: flex; padding: 0.5rem; background-color: #fff; border-top: 1px solid #ccc; }
+    #messageInput { flex: 1; padding: 0.8rem; border: 1px solid #ccc; border-radius: 0.5rem; font-size: 1rem; }
+    button { margin-left: 0.5rem; padding: 0.8rem 1.2rem; background-color: #D4A373; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: bold; color: #fff; }
+    button:hover { background-color: #b88356; }
+    .sys { align-self: center; font-size: 0.9rem; opacity: 0.7; }
+    .quick { align-self: center; background: #cde0c9; padding: 0.5rem 1rem; margin: 0.3rem; border-radius: 0.5rem; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>애니어그램 테스트</header>
+  <div id="chat"></div>
+  <div id="inputBox">
+    <input type="text" id="messageInput" placeholder="메시지를 입력하세요... (예: 1)" />
+    <button id="sendBtn">전송</button>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:3000";
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const userId = "user-" + Math.random().toString(36).substring(2, 10);
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function appendMessage(sender, text) {
+      const div = document.createElement("div");
+      div.className = sender;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendSys(text) {
+      const div = document.createElement("div");
+      div.className = "sys";
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendQuick(msg, label) {
+      const div = document.createElement("div");
+      div.className = "quick";
+      div.textContent = label;
+      div.onclick = () => sendMessage(msg);
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function callChatAPI(message) {
+      try {
+        const res = await fetch(`${API_BASE}/message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, message })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        return data.reply;
+      } catch (err) {
+        console.error("[fetch error]", err);
+        appendSys("⚠️ 서버 통신 오류: " + err.message);
+        return null;
+      }
+    }
+
+    async function sendMessage(msg=null) {
+      const message = msg || input.value.trim();
+      if (!message) return;
+      appendMessage("user", message);
+      input.value = "";
+
+      const reply = await callChatAPI(message);
+      if (reply !== null) {
+        appendMessage("bot", reply);
+
+        // "결과 보기/테스트하기" 메뉴가 뜨면 버튼 자동생성
+        if (reply.includes("지금까지 결과 보기") && reply.includes("테스트하기")) {
+          appendQuick("1", "📊 지금까지 결과 보기");
+          appendQuick("2", "📝 테스트하기");
+        }
+      }
+    }
+
+    // 초기 화면: 버튼 2개 바로 노출
+    (async function init() {
+      appendMessage("bot", "안녕하세요 👋\n아래에서 선택해주세요!");
+      appendQuick("1", "📊 지금까지 결과 보기");
+      appendQuick("2", "📝 테스트하기");
+    })();
+  </script>
+</body>
+</html>
