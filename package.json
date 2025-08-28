@@ -3,19 +3,14 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "postinstall": "npm rebuild sqlite3 --build-from-source"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
     "express": "^5.1.0",
     "sqlite3": "^5.1.7"
-  },
-  "description": ""
+  }
 }
