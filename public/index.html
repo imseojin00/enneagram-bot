@@ -29,7 +29,9 @@
   </div>
 
   <script>
-    const API_BASE = "http://localhost:3000";
+    // ✅ API_BASE 수정 (뒤에 /message 제거)
+    const API_BASE = "https://enneagram-bot.onrender.com";  
+    
     const chat = document.getElementById("chat");
     const input = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
