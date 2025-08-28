@@ -29,89 +29,94 @@
   </div>
 
   <script>
-    // ✅ API_BASE 수정 (뒤에 /message 제거)
-    const API_BASE = "https://enneagram-bot.onrender.com";  
-    
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const userId = "user-" + Math.random().toString(36).substring(2, 10);
+  // ✅ API_BASE 수정 (뒤에 /message 제거)
+  const API_BASE = "https://enneagram-bot.onrender.com";  
+  
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const userId = "user-" + Math.random().toString(36).substring(2, 10);
 
-    sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendMessage();
+  // 📌 버튼 클릭 시 실행
+  sendBtn.addEventListener("click", () => sendMessage());
+
+  // 📌 엔터 입력 시 실행
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  function appendMessage(sender, text) {
+    const div = document.createElement("div");
+    div.className = sender;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function appendSys(text) {
+    const div = document.createElement("div");
+    div.className = "sys";
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function appendQuick(msg, label) {
+    const div = document.createElement("div");
+    div.className = "quick";
+    div.textContent = label;
+    div.onclick = () => sendMessage(msg);
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  async function callChatAPI(message) {
+    try {
+      const res = await fetch(`${API_BASE}/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, message })
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data.reply;
+    } catch (err) {
+      console.error("[fetch error]", err);
+      appendSys("⚠️ 서버 통신 오류: " + err.message);
+      return null;
+    }
+  }
+
+  async function sendMessage(msg=null) {
+    const message = msg || input.value.trim();
+    if (!message) return;
+    appendMessage("user", message);
+    input.value = "";
+
+    const reply = await callChatAPI(message);
+    if (reply !== null) {
+      appendMessage("bot", reply);
+
+      // "결과 보기/테스트하기" 메뉴가 뜨면 버튼 자동생성
+      if (reply.includes("지금까지 결과 보기") && reply.includes("테스트하기")) {
+        appendQuick("1", "📊 지금까지 결과 보기");
+        appendQuick("2", "📝 테스트하기");
       }
-    });
-
-    function appendMessage(sender, text) {
-      const div = document.createElement("div");
-      div.className = sender;
-      div.textContent = text;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
     }
+  }
 
-    function appendSys(text) {
-      const div = document.createElement("div");
-      div.className = "sys";
-      div.textContent = text;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
+  // 초기 화면: 버튼 2개 바로 노출
+  (async function init() {
+    appendMessage("bot", "안녕하세요 👋\n아래에서 선택해주세요!");
+    appendQuick("1", "📊 지금까지 결과 보기");
+    appendQuick("2", "📝 테스트하기");
+  })();
 
-    function appendQuick(msg, label) {
-      const div = document.createElement("div");
-      div.className = "quick";
-      div.textContent = label;
-      div.onclick = () => sendMessage(msg);
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
 
-    async function callChatAPI(message) {
-      try {
-        const res = await fetch(`${API_BASE}/message`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, message })
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        return data.reply;
-      } catch (err) {
-        console.error("[fetch error]", err);
-        appendSys("⚠️ 서버 통신 오류: " + err.message);
-        return null;
-      }
-    }
-
-    async function sendMessage(msg=null) {
-      const message = msg || input.value.trim();
-      if (!message) return;
-      appendMessage("user", message);
-      input.value = "";
-
-      const reply = await callChatAPI(message);
-      if (reply !== null) {
-        appendMessage("bot", reply);
-
-        // "결과 보기/테스트하기" 메뉴가 뜨면 버튼 자동생성
-        if (reply.includes("지금까지 결과 보기") && reply.includes("테스트하기")) {
-          appendQuick("1", "📊 지금까지 결과 보기");
-          appendQuick("2", "📝 테스트하기");
-        }
-      }
-    }
-
-    // 초기 화면: 버튼 2개 바로 노출
-    (async function init() {
-      appendMessage("bot", "안녕하세요 👋\n아래에서 선택해주세요!");
-      appendQuick("1", "📊 지금까지 결과 보기");
-      appendQuick("2", "📝 테스트하기");
-    })();
   </script>
 </body>
 </html>
